@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  countryId   Int     @id @default(autoincrement())
+  countryName String  @unique(map: "countryName") @db.VarChar(255)
+  Place       Place[]
+}
+
+model Place {
+  placeId          String       @id @default(uuid()) @db.Char(36)
+  placeName        String       @db.VarChar(255)
+  placeDescription String?      @db.VarChar(255)
+  countryId        Int
+  placeCreatedAt   DateTime     @default(dbgenerated("(now())")) @db.DateTime(6)
+  placeUpdatedAt   DateTime     @updatedAt @default(dbgenerated("(now())")) @db.DateTime(6)
+  Country          Country      @relation(fields: [countryId], references: [countryId], onDelete: NoAction, onUpdate: NoAction, map: "place_ibfk_1")
+  Tour_Place       Tour_Place[]
+
+  @@index([countryId], map: "countryId")
+}
+
+model Reservation {
+  reservationId              String                   @id @default(uuid()) @db.Char(36)
+  tourId                     String                   @db.Char(36)
+  reservationHolderFullName  String                   @db.VarChar(255)
+  reservationContactPhone    String?                  @db.VarChar(255)
+  reservationPeopleNumber    Int
+  reservationNote            String?                  @db.VarChar(255)
+  reservationPaymentStatusId String                   @db.Char(36)
+  reservationCreatedAt       DateTime                 @default(dbgenerated("(now())")) @db.DateTime(6)
+  reservationUpdatedAt       DateTime                 @updatedAt @default(dbgenerated("(now())")) @db.DateTime(6)
+  Tour                       Tour                     @relation(fields: [tourId], references: [tourId], onDelete: NoAction, onUpdate: NoAction, map: "reservation_ibfk_1")
+  ReservationPaymentStatus   ReservationPaymentStatus @relation(fields: [reservationPaymentStatusId], references: [reservationPaymentStatusId], onDelete: NoAction, onUpdate: NoAction, map: "reservation_ibfk_2")
+
+  @@index([reservationPaymentStatusId], map: "reservationPaymentStatusId")
+  @@index([tourId], map: "tourId")
+}
+
+model ReservationPaymentStatus {
+  reservationPaymentStatusId   String        @id @db.Char(36)
+  reservationPaymentStatusName String        @unique(map: "reservationPaymentStatusName") @db.VarChar(255)
+  Reservation                  Reservation[]
+}
+
+model Tour {
+  tourId                  String        @id @default(uuid()) @db.Char(36)
+  tourName                String?       @db.VarChar(255)
+  tourStartDate           DateTime      @db.Date
+  tourEndDate             DateTime      @db.Date
+  tourItinerary           String?       @db.Text
+  tourTicketsAvailability Int
+  tourCost                Decimal       @db.Decimal(7, 2)
+  tourStatusId            String        @db.Char(36)
+  tourCreatedAt           DateTime      @default(dbgenerated("(now())")) @db.DateTime(6)
+  tourUpdatedAt           DateTime      @updatedAt @default(dbgenerated("(now())")) @db.DateTime(6)
+  Reservation             Reservation[]
+  TourStatus              TourStatus    @relation(fields: [tourStatusId], references: [tourStatusId], onDelete: NoAction, onUpdate: NoAction, map: "tour_ibfk_1")
+  Tour_Place              Tour_Place[]
+
+  @@index([tourStatusId], map: "tourStatusId")
+}
+
+model TourStatus {
+  tourStatusId   String @id @db.Char(36)
+  tourStatusName String @unique(map: "tourStatusName") @db.VarChar(255)
+  Tour           Tour[]
+}
+
+model Tour_Place {
+  tourId  String @db.Char(36)
+  placeId String @db.Char(36)
+  Tour    Tour   @relation(fields: [tourId], references: [tourId], onDelete: NoAction, onUpdate: NoAction, map: "tour_place_ibfk_1")
+  Place   Place  @relation(fields: [placeId], references: [placeId], onDelete: NoAction, onUpdate: NoAction, map: "tour_place_ibfk_2")
+
+  @@id([tourId, placeId])
+  @@index([placeId], map: "placeId")
+}
