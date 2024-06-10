@@ -8,9 +8,10 @@ datasource db {
 }
 
 model Country {
-  countryId   Int     @id @default(autoincrement())
-  countryName String  @unique(map: "countryName") @db.VarChar(255)
-  Place       Place[]
+  countryId      Int     @id @default(autoincrement())
+  countryName    String  @unique(map: "countryName") @db.VarChar(255)
+  countryKeyWord String? @unique(map: "countryKeyWord") @db.VarChar(255)
+  Place          Place[]
 }
 
 model Place {
@@ -52,6 +53,7 @@ model ReservationPaymentStatus {
 model Tour {
   tourId                  String        @id @default(uuid()) @db.Char(36)
   tourName                String?       @db.VarChar(255)
+  tourKeyWord             String?       @unique(map: "tourKeyWord") @db.VarChar(255)
   tourStartDate           DateTime      @db.Date
   tourEndDate             DateTime      @db.Date
   tourItinerary           String?       @db.Text

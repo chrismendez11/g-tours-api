@@ -13,4 +13,26 @@ export class PlacesService {
   getPlaces() {
     return this.placesRepository.getPlaces();
   }
+
+  getCountries() {
+    return this.placesRepository.getCountries();
+  }
+
+  async getCountriesAssistant(): Promise<string> {
+    const countries = await this.getCountries();
+
+    const countriesString = countries
+      .map((country) => country.countryName)
+      .join(', ');
+
+    return countriesString;
+  }
+
+  async getPlacesAssistant() {
+    const places = await this.placesRepository.getPlacesAssistant();
+
+    const placesString = places.map((place) => place.placeName).join(', ');
+
+    return placesString;
+  }
 }

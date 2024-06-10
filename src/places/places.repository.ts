@@ -42,4 +42,24 @@ export class PlacesRepository {
       },
     });
   }
+
+  getCountries() {
+    return this.prismaService.country.findMany({
+      orderBy: {
+        countryName: 'asc',
+      },
+    });
+  }
+
+  getPlacesAssistant() {
+    return this.prismaService.place.findMany({
+      orderBy: {
+        placeName: 'asc',
+      },
+      select: {
+        placeId: true,
+        placeName: true,
+      },
+    });
+  }
 }

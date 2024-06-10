@@ -6,5 +6,6 @@ import { ToursRepository } from './tours.repository';
 @Module({
   controllers: [ToursController],
   providers: [ToursService, ToursRepository],
+  exports: [ToursService],
 })
 export class ToursModule {}
