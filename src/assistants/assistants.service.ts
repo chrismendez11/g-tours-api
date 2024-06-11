@@ -36,6 +36,7 @@ export class AssistantsService {
     const messages = await this.getThreadMessages(threadId);
 
     return {
+      version: 'v1',
       threadId,
       messages,
     };
