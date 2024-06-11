@@ -35,10 +35,14 @@ export class AssistantsService {
     console.log('Getting thread messages');
     const messages = await this.getThreadMessages(threadId);
 
+    // return {
+    //   threadId,
+    //   messages,
+    // };
+
     return {
-      version: 'v1',
       threadId,
-      messages,
+      message: messages[messages.length - 1].content,
     };
   }
 
