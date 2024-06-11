@@ -52,7 +52,8 @@ export class AssistantsService {
     const { status } = run;
     console.log(status);
     switch (status) {
-      case RunStatusConstants.IN_PROGRESS || RunStatusConstants.QUEUED:
+      case RunStatusConstants.IN_PROGRESS:
+      case RunStatusConstants.QUEUED:
         await new Promise((resolve) => setTimeout(resolve, 1000));
         return await this.checkRunStatus(threadId, runId);
       case RunStatusConstants.REQUIRES_ACTION:
@@ -76,7 +77,7 @@ export class AssistantsService {
     const messagesRepository =
       await this.assistantsRepository.getThreadMessages(threadId);
     const { data } = messagesRepository;
-
+    console.log(data);
     const messages = data.map((message) => {
       return {
         messageId: message.id,
