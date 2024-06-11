@@ -39,7 +39,7 @@ export class AssistantsService {
     //   threadId,
     //   messages,
     // };
-
+    console.log('Change made');
     return {
       threadId,
       message: messages[messages.length - 1].content,
