@@ -39,6 +39,7 @@ export class AssistantsService {
     //   threadId,
     //   messages,
     // };
+    console.log(messages);
     console.log('Change made');
     return {
       threadId,
