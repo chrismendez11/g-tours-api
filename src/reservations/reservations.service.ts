@@ -3,12 +3,25 @@ import { ReservationsRepository } from './reservations.repository';
 import { CreateReservationRepositoryDto } from './dto/create-reservation-repository.dto';
 import { CreateReservationAssistantDto } from './dto/create-reservation-assistant.dto';
 import { ReservationPaymentStatusConstants } from './reservation-payment-status/reservation-payment-status.constants';
+import { CreateReservationDto } from './dto/create-reservation.dto';
 
 @Injectable()
 export class ReservationsService {
   constructor(
     private readonly reservationsRepository: ReservationsRepository,
   ) {}
+
+  createReservation(createReservationDto: CreateReservationDto) {
+    const createReservationRepositoryDto: CreateReservationRepositoryDto = {
+      ...createReservationDto,
+      reservationPaymentStatusId:
+        ReservationPaymentStatusConstants.PAYMENT_PENDING,
+    };
+
+    return this.reservationsRepository.makeReservation(
+      createReservationRepositoryDto,
+    );
+  }
 
   async makeReservationAssistant(
     createReservationAssistantDto: CreateReservationAssistantDto,
