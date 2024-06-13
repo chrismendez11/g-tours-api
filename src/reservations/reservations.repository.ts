@@ -31,7 +31,7 @@ export class ReservationsRepository {
   getReservations() {
     return this.prismaService.reservation.findMany({
       orderBy: {
-        reservationCreatedAt: 'desc',
+        reservationCreatedAt: 'asc',
       },
       select: {
         reservationId: true,
@@ -39,9 +39,11 @@ export class ReservationsRepository {
         reservationContactPhone: true,
         reservationPeopleNumber: true,
         ReservationPaymentStatus: true,
+        reservationCreatedAt: true,
         Tour: {
           select: {
             tourName: true,
+            tourCost: true,
             Tour_Place: {
               select: {
                 Place: {
