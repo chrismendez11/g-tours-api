@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { AssistantsRepository } from './assistants.repository';
 import { AskAssistantDto } from './dto/ask-assistant.dto';
 import { RunStatusConstants } from './constants/run-status.constants';
@@ -7,6 +11,8 @@ import type { Run } from 'openai/resources/beta/threads/runs/runs';
 import { PlacesService } from 'src/places/places.service';
 import { ToursService } from 'src/tours/tours.service';
 import { ReservationsService } from 'src/reservations/reservations.service';
+import { AssistantTool } from 'openai/resources/beta/assistants';
+import { UpdateAssistantFunctionEnumDto } from './dto/update-assistant-function-enum.dto';
 
 @Injectable()
 export class AssistantsService {
@@ -40,7 +46,6 @@ export class AssistantsService {
     //   messages,
     // };
     console.log(messages);
-    console.log('Change made');
     return {
       threadId,
       message: messages[messages.length - 1].content,
@@ -116,6 +121,7 @@ export class AssistantsService {
               output: tours,
             };
           case FunctionCallingConstant.GET_TOURS_BY_COUNTRY:
+            console.log('Tool arguments:', tool.function.arguments);
             const toursByCountry =
               await this.toursService.getToursByCountryAssistant(
                 JSON.parse(tool.function.arguments),
@@ -160,5 +166,42 @@ export class AssistantsService {
     } else {
       console.log('No tool outputs to submit.');
     }
+  }
+
+  /** 
+   @description Modifies the enum values of a function property of the assistant tools
+   */
+  private async updateAssistantEnumFunction(
+    updateAssistantFunctionEnumDto: UpdateAssistantFunctionEnumDto,
+  ) {
+    const { functionName, functionProperty, enumValue, enumValueAction } =
+      updateAssistantFunctionEnumDto;
+
+    const { tools } = await this.assistantsRepository.getAssistant();
+
+    const functions = tools.filter((tool) => tool.type === 'function');
+
+    const functionToModify: AssistantTool = functions.find(
+      (value) => (value as any).function.name === functionName,
+    );
+
+    const functionEnums: string[] = (functionToModify as any).function
+      .parameters.properties[functionProperty].enum;
+
+    switch (enumValueAction) {
+      case 'add':
+        functionEnums.push(enumValue);
+        break;
+      case 'remove':
+        const index = functionEnums.indexOf(enumValue);
+        if (index > -1) {
+          functionEnums.splice(index, 1);
+        }
+        break;
+      default:
+        throw new BadRequestException('Invalid enum value action');
+    }
+
+    return this.assistantsRepository.updateAssistant(tools);
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import OpenAI from 'openai';
 import { ToolOutput } from './interfaces/tool-outputs.interface';
+import { AssistantTool } from 'openai/resources/beta/assistants';
 
 @Injectable()
 export class AssistantsRepository {
@@ -59,5 +60,23 @@ export class AssistantsRepository {
         'Failed to submit tool outputs and poll the run status',
       );
     }
+  }
+
+  getAssistant() {
+    const assistant = this.openai.beta.assistants.retrieve(
+      process.env.OPENAI_ASSISTANT_ID,
+    );
+
+    return assistant;
+  }
+
+  updateAssistant(tools: AssistantTool[]) {
+    const assistant = this.openai.beta.assistants.update(
+      process.env.OPENAI_ASSISTANT_ID,
+      {
+        tools,
+      },
+    );
+    return assistant;
   }
 }
