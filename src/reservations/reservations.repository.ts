@@ -1,12 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/shared/modules/prisma/prisma.service';
 import { CreateReservationRepositoryDto } from './dto/create-reservation-repository.dto';
+import { PrismaErrorCodes } from 'src/shared/modules/prisma/constants/prisma-error-codes.constants';
 
 @Injectable()
 export class ReservationsRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  makeReservation(
+  createReservation(
     createReservationRepositoryDto: CreateReservationRepositoryDto,
   ) {
     return this.prismaService.reservation.create({
@@ -17,15 +22,45 @@ export class ReservationsRepository {
     });
   }
 
-  getTourIdByKeyword(tourKeyWord: string) {
-    return this.prismaService.tour.findUnique({
-      where: {
-        tourKeyWord,
-      },
-      select: {
-        tourId: true,
-      },
-    });
+  async getTourIdByKeyword(tourKeyWord: string) {
+    try {
+      const tour = await this.prismaService.tour.findUnique({
+        where: {
+          tourKeyWord,
+        },
+        select: {
+          tourId: true,
+        },
+      });
+      return tour;
+    } catch (error) {
+      if (error.code === PrismaErrorCodes.RecordDoesNotExist) {
+        throw new NotFoundException('Tour not found');
+      } else {
+        throw new InternalServerErrorException();
+      }
+    }
+  }
+
+  async getTourById(tourId: string) {
+    try {
+      const tour = await this.prismaService.tour.findUnique({
+        where: {
+          tourId,
+        },
+        select: {
+          tourId: true,
+          tourStatusId: true,
+        },
+      });
+      return tour;
+    } catch (error) {
+      if (error.code === PrismaErrorCodes.RecordDoesNotExist) {
+        throw new NotFoundException('Tour not found');
+      } else {
+        throw new InternalServerErrorException();
+      }
+    }
   }
 
   getReservations() {
@@ -57,5 +92,46 @@ export class ReservationsRepository {
         },
       },
     });
+  }
+
+  async getTourTicketsAvailability(tourId: string) {
+    try {
+      const tourTicketsAvailability = await this.prismaService.tour.findUnique({
+        where: {
+          tourId,
+        },
+        select: {
+          tourTicketsAvailability: true,
+        },
+      });
+      return tourTicketsAvailability.tourTicketsAvailability;
+    } catch (error) {
+      if (error.code === PrismaErrorCodes.RecordDoesNotExist) {
+        throw new NotFoundException('Tour not found');
+      } else {
+        throw new InternalServerErrorException();
+      }
+    }
+  }
+
+  async getTotalTourReservationPeopleNumber(tourId: string) {
+    try {
+      const totalTourReservations =
+        await this.prismaService.reservation.aggregate({
+          where: {
+            tourId,
+          },
+          _sum: {
+            reservationPeopleNumber: true,
+          },
+        });
+      return totalTourReservations._sum.reservationPeopleNumber;
+    } catch (error) {
+      if (error.code === PrismaErrorCodes.RecordDoesNotExist) {
+        throw new NotFoundException('Tour not found');
+      } else {
+        throw new InternalServerErrorException();
+      }
+    }
   }
 }

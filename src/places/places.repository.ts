@@ -1,20 +1,20 @@
 import {
-  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/shared/modules/prisma/prisma.service';
-import { CreatePlaceDto } from './dto/create-place.dto';
 import { PrismaErrorCodes } from 'src/shared/modules/prisma/constants/prisma-error-codes.constants';
+import { CreatePlaceRepositoryDto } from './dto/create-place-repository.dto';
 
 @Injectable()
 export class PlacesRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async createPlace(createPlaceDto: CreatePlaceDto) {
+  async createPlace(createPlaceRepositoryDto: CreatePlaceRepositoryDto) {
     try {
       const place = await this.prismaService.place.create({
-        data: createPlaceDto,
+        data: createPlaceRepositoryDto,
         select: {
           placeId: true,
         },
@@ -25,7 +25,17 @@ export class PlacesRepository {
         error.code === PrismaErrorCodes.InvalidForeignKey &&
         error.meta.field_name === 'countryId'
       ) {
-        throw new BadRequestException('Invalid countryId');
+        throw new ConflictException('Invalid countryId');
+      } else if (
+        error.code === PrismaErrorCodes.RecordAlreadyExists &&
+        error.meta.target.includes('placeName')
+      ) {
+        throw new ConflictException('Place name already exists');
+      } else if (
+        error.code === PrismaErrorCodes.RecordAlreadyExists &&
+        error.meta.target.includes('placeKeyword')
+      ) {
+        throw new ConflictException('Place keyword already exists');
       } else {
         throw new InternalServerErrorException();
       }
@@ -43,14 +53,6 @@ export class PlacesRepository {
     });
   }
 
-  getCountries() {
-    return this.prismaService.country.findMany({
-      orderBy: {
-        countryName: 'asc',
-      },
-    });
-  }
-
   getPlacesAssistant() {
     return this.prismaService.place.findMany({
       orderBy: {
@@ -59,6 +61,14 @@ export class PlacesRepository {
       select: {
         placeId: true,
         placeName: true,
+      },
+    });
+  }
+
+  getCountries() {
+    return this.prismaService.country.findMany({
+      orderBy: {
+        countryName: 'asc',
       },
     });
   }

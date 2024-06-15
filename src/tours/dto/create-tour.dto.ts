@@ -13,6 +13,7 @@ import {
 export class CreateTourDto {
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => value.trim())
   tourName?: string;
 
   @IsOptional()

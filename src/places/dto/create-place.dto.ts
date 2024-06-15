@@ -4,6 +4,7 @@ import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class CreatePlaceDto {
   @IsNotEmpty()
   @IsString()
+  @Transform(({ value }) => value.trim())
   placeName: string;
 
   @IsOptional()

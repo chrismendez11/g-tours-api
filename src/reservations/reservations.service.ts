@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { ReservationsRepository } from './reservations.repository';
 import { CreateReservationRepositoryDto } from './dto/create-reservation-repository.dto';
 import { CreateReservationAssistantDto } from './dto/create-reservation-assistant.dto';
@@ -7,6 +7,8 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import * as Exceljs from 'exceljs';
 import * as mime from 'mime-types';
 import { convertToDateString } from 'src/shared/helpers/convert-to-day-string.helper';
+import { TourStatusConstants } from 'src/tours/tour-status/tour-status.constants';
+import { CreateReservationValidationsDto } from './dto/create-reservation-validations.dto';
 
 @Injectable()
 export class ReservationsService {
@@ -14,33 +16,49 @@ export class ReservationsService {
     private readonly reservationsRepository: ReservationsRepository,
   ) {}
 
-  createReservation(createReservationDto: CreateReservationDto) {
+  async createReservation(createReservationDto: CreateReservationDto) {
+    const { tourId, reservationPeopleNumber } = createReservationDto;
+
+    await this.createReservationValidations({
+      tourId,
+      reservationPeopleNumber,
+    });
+
+    const reservationPaymentStatusId =
+      ReservationPaymentStatusConstants.PAYMENT_PENDING;
     const createReservationRepositoryDto: CreateReservationRepositoryDto = {
       ...createReservationDto,
-      reservationPaymentStatusId:
-        ReservationPaymentStatusConstants.PAYMENT_PENDING,
+      reservationPaymentStatusId,
     };
 
-    return this.reservationsRepository.makeReservation(
+    return this.reservationsRepository.createReservation(
       createReservationRepositoryDto,
     );
   }
 
-  async makeReservationAssistant(
+  async createReservationAssistant(
     createReservationAssistantDto: CreateReservationAssistantDto,
   ) {
     const { tourKeyWord, ...createReservationDto } =
       createReservationAssistantDto;
+
     const { tourId } =
       await this.reservationsRepository.getTourIdByKeyword(tourKeyWord);
+
+    await this.createReservationValidations({
+      tourId,
+      reservationPeopleNumber: createReservationDto.reservationPeopleNumber,
+    });
+
+    const reservationPaymentStatusId =
+      ReservationPaymentStatusConstants.PAYMENT_PENDING;
     const createReservationRepositoryDto: CreateReservationRepositoryDto = {
       tourId,
       ...createReservationDto,
-      reservationPaymentStatusId:
-        ReservationPaymentStatusConstants.PAYMENT_PENDING,
+      reservationPaymentStatusId,
     };
 
-    await this.reservationsRepository.makeReservation(
+    await this.reservationsRepository.createReservation(
       createReservationRepositoryDto,
     );
 
@@ -114,5 +132,53 @@ export class ReservationsService {
       fileName: `Reservaciones-G-Tours.${fileExtension}`,
       data: Buffer.from(buffer),
     };
+  }
+
+  getTotalTourReservationPeopleNumber(tourId: string) {
+    return this.reservationsRepository.getTotalTourReservationPeopleNumber(
+      tourId,
+    );
+  }
+
+  private async createReservationValidations(
+    createReservationValidationsDto: CreateReservationValidationsDto,
+  ) {
+    const { tourId, reservationPeopleNumber } = createReservationValidationsDto;
+
+    const tour = await this.reservationsRepository.getTourById(tourId);
+    const { tourStatusId } = tour;
+
+    if (tourStatusId !== TourStatusConstants.AVAILABLE) {
+      throw new ConflictException(
+        "The tour you're trying to book is not available for reservations. Please try booking another tour.",
+      );
+    }
+
+    const availableTourReservations =
+      await this.availableTourReservations(tourId);
+
+    if (availableTourReservations <= 0) {
+      throw new ConflictException(
+        "There's no available reservations for the tour you're trying to book. Please add more tickets to the tour or try booking another tour.",
+      );
+    } else if (availableTourReservations < reservationPeopleNumber) {
+      throw new ConflictException(
+        `There are only ${availableTourReservations} available reservations for the tour you're trying to book. Please add more tickets to the tour or try booking another tour.`,
+      );
+    }
+  }
+
+  private async availableTourReservations(tourId: string): Promise<number> {
+    const tourTicketsAvailability =
+      await this.reservationsRepository.getTourTicketsAvailability(tourId);
+    const totalTourReservationPeopleNumber =
+      await this.reservationsRepository.getTotalTourReservationPeopleNumber(
+        tourId,
+      );
+
+    const totalTourReservationsAvailable =
+      tourTicketsAvailability - totalTourReservationPeopleNumber;
+
+    return totalTourReservationsAvailable;
   }
 }

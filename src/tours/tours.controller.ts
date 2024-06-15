@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { ToursService } from './tours.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 
@@ -14,5 +14,15 @@ export class ToursController {
   @Get()
   getTours() {
     return this.toursService.getTours();
+  }
+
+  @Get(':tourId')
+  getTourById(@Param('tourId') tourId: string) {
+    return this.toursService.getTourById(tourId);
+  }
+
+  @Put(':tourId')
+  cancelTourById(@Param('tourId') tourId: string) {
+    return this.toursService.cancelTourById(tourId);
   }
 }

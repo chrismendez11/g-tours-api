@@ -1,12 +1,14 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   InternalServerErrorException,
+  forwardRef,
 } from '@nestjs/common';
 import { AssistantsRepository } from './assistants.repository';
 import { AskAssistantDto } from './dto/ask-assistant.dto';
 import { RunStatusConstants } from './constants/run-status.constants';
-import { FunctionCallingConstant } from './constants/function-calling.constant';
+import { FunctionCallingConstants } from './constants/function-calling.constants';
 import type { Run } from 'openai/resources/beta/threads/runs/runs';
 import { PlacesService } from 'src/places/places.service';
 import { ToursService } from 'src/tours/tours.service';
@@ -18,6 +20,7 @@ import { UpdateAssistantFunctionEnumDto } from './dto/update-assistant-function-
 export class AssistantsService {
   constructor(
     private readonly assistantsRepository: AssistantsRepository,
+    @Inject(forwardRef(() => PlacesService))
     private readonly placesService: PlacesService,
     private readonly toursService: ToursService,
     private readonly reservationsService: ReservationsService,
@@ -102,25 +105,25 @@ export class AssistantsService {
     const toolOutputsPromise =
       run.required_action.submit_tool_outputs.tool_calls.map(async (tool) => {
         switch (tool.function.name) {
-          case FunctionCallingConstant.GET_TOUR_COUNTRIES:
+          case FunctionCallingConstants.GET_TOUR_COUNTRIES:
             const countries = await this.placesService.getCountriesAssistant();
             return {
               tool_call_id: tool.id,
               output: countries,
             };
-          case FunctionCallingConstant.GET_TOUR_PLACES:
+          case FunctionCallingConstants.GET_TOUR_PLACES:
             const places = await this.placesService.getPlacesAssistant();
             return {
               tool_call_id: tool.id,
               output: places,
             };
-          case FunctionCallingConstant.GET_AVAILABLE_TOURS:
+          case FunctionCallingConstants.GET_AVAILABLE_TOURS:
             const tours = await this.toursService.getToursAssistant();
             return {
               tool_call_id: tool.id,
               output: tours,
             };
-          case FunctionCallingConstant.GET_TOURS_BY_COUNTRY:
+          case FunctionCallingConstants.GET_TOURS_BY_COUNTRY:
             console.log('Tool arguments:', tool.function.arguments);
             const toursByCountry =
               await this.toursService.getToursByCountryAssistant(
@@ -130,7 +133,7 @@ export class AssistantsService {
               tool_call_id: tool.id,
               output: toursByCountry,
             };
-          case FunctionCallingConstant.GET_TOUR_BY_KEYWORD:
+          case FunctionCallingConstants.GET_TOUR_BY_KEYWORD:
             const tourByKeyword =
               await this.toursService.getTourByKeywordAssistant(
                 JSON.parse(tool.function.arguments),
@@ -139,9 +142,9 @@ export class AssistantsService {
               tool_call_id: tool.id,
               output: tourByKeyword,
             };
-          case FunctionCallingConstant.BOOK_TOUR:
+          case FunctionCallingConstants.BOOK_TOUR:
             const reservation =
-              await this.reservationsService.makeReservationAssistant(
+              await this.reservationsService.createReservationAssistant(
                 JSON.parse(tool.function.arguments),
               );
             return {
@@ -168,10 +171,10 @@ export class AssistantsService {
     }
   }
 
-  /** 
-   @description Modifies the enum values of a function property of the assistant tools
+  /**
+   * Modifies the enum values of a function property of the assistant tools.
    */
-  private async updateAssistantEnumFunction(
+  async updateAssistantEnumFunction(
     updateAssistantFunctionEnumDto: UpdateAssistantFunctionEnumDto,
   ) {
     const { functionName, functionProperty, enumValue, enumValueAction } =

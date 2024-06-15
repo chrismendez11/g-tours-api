@@ -10,13 +10,14 @@ datasource db {
 model Country {
   countryId      Int     @id @default(autoincrement())
   countryName    String  @unique(map: "countryName") @db.VarChar(255)
-  countryKeyWord String? @unique(map: "countryKeyWord") @db.VarChar(255)
+  countryKeyWord String  @unique(map: "countryKeyWord") @db.VarChar(255)
   Place          Place[]
 }
 
 model Place {
   placeId          String       @id @default(uuid()) @db.Char(36)
-  placeName        String       @db.VarChar(255)
+  placeName        String       @unique(map: "placeName") @db.VarChar(255)
+  placeKeyWord     String       @unique(map: "placeKeyWord") @db.VarChar(255)
   placeDescription String?      @db.VarChar(255)
   countryId        Int
   placeCreatedAt   DateTime     @default(dbgenerated("(now())")) @db.DateTime(6)
