@@ -9,7 +9,6 @@ export class AssistantsRepository {
 
   createThread() {
     const thread = this.openai.beta.threads.create();
-
     return thread;
   }
 
@@ -18,7 +17,6 @@ export class AssistantsRepository {
       role: 'user',
       content: message,
     });
-
     return response;
   }
 
@@ -26,19 +24,16 @@ export class AssistantsRepository {
     const run = this.openai.beta.threads.runs.create(threadId, {
       assistant_id: process.env.OPENAI_ASSISTANT_ID,
     });
-
     return run;
   }
 
   checkRunStatus(threadId: string, runId: string) {
     const run = this.openai.beta.threads.runs.retrieve(threadId, runId);
-
     return run;
   }
 
   getThreadMessages(threadId: string) {
     const messages = this.openai.beta.threads.messages.list(threadId);
-
     return messages;
   }
 
@@ -66,7 +61,6 @@ export class AssistantsRepository {
     const assistant = this.openai.beta.assistants.retrieve(
       process.env.OPENAI_ASSISTANT_ID,
     );
-
     return assistant;
   }
 
