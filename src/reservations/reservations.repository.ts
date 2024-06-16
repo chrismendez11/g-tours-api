@@ -73,6 +73,7 @@ export class ReservationsRepository {
         reservationHolderFullName: true,
         reservationContactPhone: true,
         reservationPeopleNumber: true,
+        reservationNote: true,
         ReservationPaymentStatus: true,
         reservationCreatedAt: true,
         Tour: {

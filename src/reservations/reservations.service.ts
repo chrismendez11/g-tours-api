@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { ReservationsRepository } from './reservations.repository';
 import { CreateReservationRepositoryDto } from './dto/create-reservation-repository.dto';
 import { CreateReservationAssistantDto } from './dto/create-reservation-assistant.dto';
@@ -9,11 +14,16 @@ import * as mime from 'mime-types';
 import { convertToDateString } from 'src/shared/helpers/convert-to-day-string.helper';
 import { TourStatusConstants } from 'src/tours/tour-status/tour-status.constants';
 import { CreateReservationValidationsDto } from './dto/create-reservation-validations.dto';
+import { ReservationsGateway } from './reservations.gateway';
+import { convertToDateHourString } from 'src/shared/helpers/convert-to-day-hour-string.helper';
+import { convertToCamelCase } from 'src/shared/helpers/convert-to-camel-case.helper';
 
 @Injectable()
 export class ReservationsService {
   constructor(
     private readonly reservationsRepository: ReservationsRepository,
+    @Inject(forwardRef(() => ReservationsGateway))
+    private readonly reservationsGateway: ReservationsGateway,
   ) {}
 
   async createReservation(createReservationDto: CreateReservationDto) {
@@ -31,9 +41,13 @@ export class ReservationsService {
       reservationPaymentStatusId,
     };
 
-    return this.reservationsRepository.createReservation(
+    const reservation = await this.reservationsRepository.createReservation(
       createReservationRepositoryDto,
     );
+
+    await this.reservationsGateway.getReservations();
+
+    return reservation;
   }
 
   async createReservationAssistant(
@@ -65,8 +79,35 @@ export class ReservationsService {
     return 'Reservación creada exitosamente! Un asistente de G-Tours de pondrá en contacto con el cliente para la confirmación de la reserva y para proveer los detalles para realizar el pago.';
   }
 
-  getReservations() {
-    return this.reservationsRepository.getReservations();
+  async getReservations() {
+    const reservationsRepository =
+      await this.reservationsRepository.getReservations();
+
+    const reservations = reservationsRepository.map((reservation) => {
+      const {
+        reservationId,
+        reservationHolderFullName,
+        reservationContactPhone,
+        reservationPeopleNumber,
+        reservationNote,
+        Tour,
+        ReservationPaymentStatus,
+        reservationCreatedAt,
+      } = reservation;
+      return {
+        reservationId,
+        reservationHolderFullName,
+        reservationContactPhone,
+        reservationPeopleNumber,
+        reservationNote,
+        tourName: Tour.tourName,
+        reservationTotalPrice: `Q${reservationPeopleNumber * Number(Tour.tourCost)}`,
+        ReservationPaymentStatus,
+        reservationCreatedAt: convertToDateHourString(reservationCreatedAt),
+      };
+    });
+
+    return convertToCamelCase(reservations);
   }
 
   async getReservationsFile() {

@@ -163,6 +163,7 @@ export class ToursRepository {
         select: {
           tourId: true,
           tourName: true,
+          tourKeyWord: true,
           tourStartDate: true,
           tourEndDate: true,
           TourStatus: true,

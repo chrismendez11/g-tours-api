@@ -177,6 +177,17 @@ export class ToursService {
       throw new ConflictException('The tour is not available to be cancelled.');
     }
 
+    // Removing the tourKeyWord from the assistant function enum
+    const updateAssistantFunctionEnumDto: UpdateAssistantFunctionEnumDto = {
+      functionName: FunctionCallingConstants.GET_TOUR_BY_KEYWORD,
+      functionProperty: 'tourKeyWord',
+      enumValue: tour.tourKeyWord,
+      enumValueAction: 'remove',
+    };
+    await this.assistantsService.updateAssistantEnumFunction(
+      updateAssistantFunctionEnumDto,
+    );
+
     const tourStatusId = TourStatusConstants.CANCELLED;
     await this.toursRepository.cancelTourById(tourId, tourStatusId);
 
